@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "faker-galactic"
+version = "1.0.0"
+description = "Science fiction themed Faker provider for multiple universes including Star Trek, Star Wars, Battlestar Galactica, and more"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Jason Leibowitz", email = "jason@leibowitz.me" }]
+requires-python = ">=3.13"
+keywords = [
+    "faker",
+    "fake-data",
+    "sci-fi",
+    "science-fiction",
+    "star-trek",
+    "star-wars",
+    "testing",
+    "mock-data",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = ["faker>=20.0.0"]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/faker-galactic"      # UPDATE
+Repository = "https://github.com/yourusername/faker-galactic"    # UPDATE
+Issues = "https://github.com/yourusername/faker-galactic/issues" # UPDATE
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/faker_galactic"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/src", "/tests", "/README.md", "/LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[dependency-groups]
+dev = [
+    "build>=1.3.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "twine>=6.2.0",
+]

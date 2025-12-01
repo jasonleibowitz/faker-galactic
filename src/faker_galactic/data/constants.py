@@ -1,0 +1,21 @@
+"""Constants and enums for sci-fi universe data."""
+
+from enum import Enum
+
+
+class UniverseAttribute(str, Enum):
+    """Universe data attribute names for type-safe access."""
+
+    FIRST_NAMES_MALE = "FIRST_NAMES_MALE"
+    FIRST_NAMES_FEMALE = "FIRST_NAMES_FEMALE"
+    LAST_NAMES_MALE = "LAST_NAMES_MALE"
+    LAST_NAMES_FEMALE = "LAST_NAMES_FEMALE"
+    RANKS = "RANKS"
+    STARSHIPS = "STARSHIPS"
+    STARSHIP_REGISTRIES = "STARSHIP_REGISTRIES"
+    STARSHIP_CLASSES = "STARSHIP_CLASSES"
+    BASE_LOCATIONS = "BASE_LOCATIONS"
+    LOCATION_DETAILS = "LOCATION_DETAILS"
+    LANGUAGES = "LANGUAGES"
+    QUOTES = "QUOTES"
+    CANONICAL_CHARACTERS = "CANONICAL_CHARACTERS"
