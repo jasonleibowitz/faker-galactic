@@ -1,6 +1,6 @@
 """Star Trek universe data (TOS, TNG, DS9, VOY, Discovery)."""
 
-from .domains import CanonicalCharacter
+from .domains import CanonicalCharacter, RegistryConfig
 
 
 class StarTrekData:
@@ -178,10 +178,10 @@ class StarTrekData:
     ]
 
     STARSHIP_REGISTRIES = [
-        {"pattern": "NCC-####", "weight": 0.4},  # 4-digit (classic era)
-        {"pattern": "NCC-#####", "weight": 0.3},  # 5-digit (TNG era)
-        {"pattern": "NX-#####", "weight": 0.2},  # Experimental (Enterprise NX-01)
-        {"pattern": "NAR-#####", "weight": 0.1},  # Civilian registry
+        RegistryConfig(pattern="NCC-####", weight=0.4),  # 4-digit (classic era)
+        RegistryConfig(pattern="NCC-#####", weight=0.3),  # 5-digit (TNG era)
+        RegistryConfig(pattern="NX-#####", weight=0.2),  # Experimental (NX-01)
+        RegistryConfig(pattern="NAR-#####", weight=0.1),  # Civilian registry
     ]
 
     STARSHIP_CLASSES = [
