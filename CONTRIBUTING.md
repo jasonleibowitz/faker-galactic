@@ -58,6 +58,27 @@ When upgrading tools:
 2. Run `uv sync --group dev`
 3. Run `pre-commit run --all-files` to verify
 
+### Spell Checking
+
+The project uses `.cspell.json` for spell-checking configuration. This file contains:
+- Project-specific terms (e.g., "startrek", "starwars", "scifi")
+- Technical terms (e.g., "bothify")
+- Universe-specific terms (e.g., "Starfleet", "Holodeck")
+
+**Adding new terms:**
+If you add new sci-fi terms that trigger spell-check warnings, add them to `.cspell.json`:
+
+```json
+{
+  "words": [
+    "existing-term",
+    "your-new-term"
+  ]
+}
+```
+
+Most editors with spell-check extensions (VS Code, IntelliJ, Neovim) will automatically read this file.
+
 ## Adding New Universes
 
 1. Create `data/{universe}.py` with a data class containing all required attributes
