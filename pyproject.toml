@@ -113,3 +113,7 @@ disallow_untyped_defs = false  # More lenient in tests
 [[tool.mypy.overrides]]
 module = "faker.*"
 ignore_missing_imports = true  # Faker has incomplete type stubs
+
+[[tool.mypy.overrides]]
+module = "questionary"
+ignore_missing_imports = true  # questionary has incomplete type stubs
