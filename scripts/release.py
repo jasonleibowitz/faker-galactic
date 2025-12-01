@@ -2,7 +2,9 @@
 """Interactive release preparation script."""
 
 import re
+import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import questionary
@@ -77,6 +79,88 @@ def select_version(current: str, versions: dict[str, str]) -> str | None:
     return versions[bump_type]
 
 
+def get_last_release_tag() -> str | None:
+    """Get the last release tag, or None if no tags exist."""
+    try:
+        result = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError:
+        return None
+
+
+def get_commits_since(tag: str | None) -> list[str]:
+    """Get commit messages since tag (or all if tag is None)."""
+    if tag:
+        cmd = ["git", "log", f"{tag}..HEAD", "--oneline"]
+    else:
+        cmd = ["git", "log", "--oneline"]
+
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    return result.stdout.strip().split("\n") if result.stdout.strip() else []
+
+
+def parse_commit_message(commit: str) -> tuple[str, str | None]:
+    """Parse commit into (message, pr_number)."""
+    # Format: "abc1234 Commit message (#123)"
+    match = re.match(r"^[a-f0-9]+\s+(.+?)(?:\s+\(#(\d+)\))?$", commit)
+    if not match:
+        return commit, None
+    return match.group(1), match.group(2)
+
+
+def get_repo_info() -> tuple[str, str]:
+    """Get GitHub owner/repo from git remote."""
+    result = subprocess.run(
+        ["git", "remote", "get-url", "origin"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    url = result.stdout.strip()
+
+    # Parse: git@github.com:owner/repo.git or https://github.com/owner/repo.git
+    match = re.search(r"github\.com[:/]([^/]+)/([^/\.]+)", url)
+    if not match:
+        print("❌ Could not parse GitHub repo from remote URL")
+        sys.exit(1)
+
+    return match.group(1), match.group(2)
+
+
+def generate_changelog_entry(version: str, commits: list[str]) -> str:
+    """Generate CHANGELOG entry from commits."""
+    owner, repo = get_repo_info()
+    date = datetime.now().strftime("%Y-%m-%d")
+
+    lines = [f"## [{version}] - {date}\n"]
+
+    for commit in commits:
+        message, pr_num = parse_commit_message(commit)
+        if pr_num:
+            pr_link = f"[#{pr_num}](https://github.com/{owner}/{repo}/pull/{pr_num})"
+            lines.append(f"- {message} {pr_link}")
+        else:
+            lines.append(f"- {message}")
+
+    return "\n".join(lines)
+
+
+def preview_changelog(entry: str) -> bool:
+    """Show changelog entry and get confirmation."""
+    print("\n📝 Generated CHANGELOG entry:\n")
+    print(entry)
+    print()
+
+    confirm = questionary.confirm("Does this look good?", default=True).ask()
+
+    return confirm if confirm is not None else False
+
+
 if __name__ == "__main__":
     # Show warning
     if not show_warning():
@@ -92,4 +176,20 @@ if __name__ == "__main__":
         print("\n❌ Release cancelled.")
         sys.exit(0)
 
-    print(f"\n✓ Selected version: {new_version}")
+    # Generate changelog
+    last_tag = get_last_release_tag()
+    commits = get_commits_since(last_tag)
+
+    if not commits or commits == [""]:
+        print("\n⚠️  No commits found since last release.")
+        date = datetime.now().strftime("%Y-%m-%d")
+        changelog_entry = f"## [{new_version}] - {date}\n\n- No changes"
+    else:
+        changelog_entry = generate_changelog_entry(new_version, commits)
+
+    # Preview and confirm
+    if not preview_changelog(changelog_entry):
+        print("\n❌ Release cancelled. Edit CHANGELOG.md manually and re-run.")
+        sys.exit(0)
+
+    print(f"\n✓ Ready to prepare release v{new_version}")
