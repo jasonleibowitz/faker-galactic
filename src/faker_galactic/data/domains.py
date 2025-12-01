@@ -4,6 +4,14 @@ from dataclasses import dataclass
 
 
 @dataclass
+class RegistryConfig:
+    """Configuration for weighted starship registry pattern generation."""
+
+    pattern: str  # e.g., "NCC-####"
+    weight: float  # Probability weight for selection
+
+
+@dataclass
 class CanonicalCharacter:
     """Complete profile for a canonical sci-fi character."""
 

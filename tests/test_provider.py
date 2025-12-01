@@ -3,8 +3,8 @@
 import pytest
 from faker import Faker
 
-from faker_galactic.provider import SciFiProvider, UNIVERSES
 from faker_galactic.data.domains import CanonicalCharacter
+from faker_galactic.provider import UNIVERSES, SciFiProvider
 
 
 @pytest.fixture

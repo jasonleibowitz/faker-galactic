@@ -1,14 +1,17 @@
 """Faker provider for sci-fi themed data."""
 
 import logging
+from typing import Literal, TypeVar, cast, overload
 
 from faker.providers import BaseProvider
 
-from .data.startrek import StarTrekData
-from .data.domains import CanonicalCharacter
 from .data.constants import UniverseAttribute
+from .data.domains import CanonicalCharacter, RegistryConfig
+from .data.startrek import StarTrekData
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
 
 # Static universe registry
 UNIVERSES = {
@@ -20,7 +23,42 @@ UNIVERSES = {
 class SciFiProvider(BaseProvider):
     """Faker provider for sci-fi themed data."""
 
-    def _get_data(self, attr: UniverseAttribute, universe: str | None = None) -> list:
+    @overload
+    def _get_data(
+        self,
+        attr: Literal[
+            UniverseAttribute.FIRST_NAMES_MALE,
+            UniverseAttribute.FIRST_NAMES_FEMALE,
+            UniverseAttribute.LAST_NAMES_MALE,
+            UniverseAttribute.LAST_NAMES_FEMALE,
+            UniverseAttribute.RANKS,
+            UniverseAttribute.STARSHIPS,
+            UniverseAttribute.STARSHIP_CLASSES,
+            UniverseAttribute.BASE_LOCATIONS,
+            UniverseAttribute.LOCATION_DETAILS,
+            UniverseAttribute.LANGUAGES,
+            UniverseAttribute.QUOTES,
+        ],
+        universe: str | None = None,
+    ) -> list[str]: ...
+
+    @overload
+    def _get_data(
+        self,
+        attr: Literal[UniverseAttribute.STARSHIP_REGISTRIES],
+        universe: str | None = None,
+    ) -> list[RegistryConfig]: ...
+
+    @overload
+    def _get_data(
+        self,
+        attr: Literal[UniverseAttribute.CANONICAL_CHARACTERS],
+        universe: str | None = None,
+    ) -> list[CanonicalCharacter]: ...
+
+    def _get_data(
+        self, attr: UniverseAttribute, universe: str | None = None
+    ) -> list[str] | list[RegistryConfig] | list[CanonicalCharacter]:
         """
         Get data attribute from universe(s).
 
@@ -62,7 +100,14 @@ class SciFiProvider(BaseProvider):
                 if isinstance(universe_attr, list):
                     data.extend(universe_attr)
 
-        return data
+        return cast(list[str] | list[RegistryConfig] | list[CanonicalCharacter], data)
+
+    def _random_element(self, items: list[T]) -> T:
+        """Type-safe wrapper for random_element.
+
+        Centralizes the cast needed for Faker's untyped random_element() method.
+        """
+        return self.random_element(items)
 
     # Name methods
 
@@ -71,34 +116,34 @@ class SciFiProvider(BaseProvider):
         male_names = self._get_data(UniverseAttribute.FIRST_NAMES_MALE, universe)
         female_names = self._get_data(UniverseAttribute.FIRST_NAMES_FEMALE, universe)
         all_names = male_names + female_names
-        return self.random_element(all_names)
+        return self._random_element(all_names)
 
     def scifi_first_name_male(self, universe: str | None = None) -> str:
         """Generate male sci-fi first name."""
         names = self._get_data(UniverseAttribute.FIRST_NAMES_MALE, universe)
-        return self.random_element(names)
+        return self._random_element(names)
 
     def scifi_first_name_female(self, universe: str | None = None) -> str:
         """Generate female sci-fi first name."""
         names = self._get_data(UniverseAttribute.FIRST_NAMES_FEMALE, universe)
-        return self.random_element(names)
+        return self._random_element(names)
 
     def scifi_last_name(self, universe: str | None = None) -> str:
         """Generate sci-fi last name (any gender)."""
         male_names = self._get_data(UniverseAttribute.LAST_NAMES_MALE, universe)
         female_names = self._get_data(UniverseAttribute.LAST_NAMES_FEMALE, universe)
         all_names = male_names + female_names
-        return self.random_element(all_names)
+        return self._random_element(all_names)
 
     def scifi_last_name_male(self, universe: str | None = None) -> str:
         """Generate male sci-fi last name."""
         names = self._get_data(UniverseAttribute.LAST_NAMES_MALE, universe)
-        return self.random_element(names)
+        return self._random_element(names)
 
     def scifi_last_name_female(self, universe: str | None = None) -> str:
         """Generate female sci-fi last name."""
         names = self._get_data(UniverseAttribute.LAST_NAMES_FEMALE, universe)
-        return self.random_element(names)
+        return self._random_element(names)
 
     def scifi_name(self, universe: str | None = None) -> str:
         """Generate full sci-fi name (first + last)."""
@@ -111,12 +156,12 @@ class SciFiProvider(BaseProvider):
     def scifi_rank(self, universe: str | None = None) -> str:
         """Generate military/organizational rank."""
         ranks = self._get_data(UniverseAttribute.RANKS, universe)
-        return self.random_element(ranks)
+        return self._random_element(ranks)
 
     def starship(self, universe: str | None = None) -> str:
         """Generate starship name."""
         starships = self._get_data(UniverseAttribute.STARSHIPS, universe)
-        return self.random_element(starships)
+        return self._random_element(starships)
 
     def starship_registry(
         self,
@@ -130,31 +175,31 @@ class SciFiProvider(BaseProvider):
         Args:
             universe: Universe to generate from (None = mixed)
             prefix_only: Return only the prefix (e.g., "NCC")
-            number_only: Return only the number (e.g., "1947")
+            number_only: Return only the number (e.g., "1701")
 
         Returns:
-            Full registry like "NCC-1947", or prefix/number if requested
+            Full registry like "NCC-1701", or prefix/number if requested
         """
         registries = self._get_data(UniverseAttribute.STARSHIP_REGISTRIES, universe)
 
         # Weighted random selection
-        registry_config = self.random_element(registries)
-        pattern = registry_config["pattern"]
+        registry_config = self._random_element(registries)
+        pattern = registry_config.pattern
 
-        # Use Faker's bothify to generate from pattern
-        full_registry = self.bothify(pattern)  # "NCC-####" -> "NCC-1947"
+        # Use Faker's bothify to generate from pattern  ("NCC-####" -> "NCC-1701")
+        full_registry = self.bothify(pattern)
 
         if prefix_only:
             return full_registry.split("-")[0]  # "NCC"
         if number_only:
-            return full_registry.split("-")[1]  # "1947"
+            return full_registry.split("-")[1]  # "1701"
 
         return full_registry
 
     def starship_class(self, universe: str | None = None) -> str:
         """Generate starship class name."""
         classes = self._get_data(UniverseAttribute.STARSHIP_CLASSES, universe)
-        return self.random_element(classes)
+        return self._random_element(classes)
 
     def scifi_location(self, universe: str | None = None) -> str:
         """
@@ -171,20 +216,20 @@ class SciFiProvider(BaseProvider):
 
         # Pick either a starship or base location
         all_bases = starships + base_locations
-        base = self.random_element(all_bases)
-        detail = self.random_element(location_details)
+        base = self._random_element(all_bases)
+        detail = self._random_element(location_details)
 
         return f"{base} {detail}"
 
     def scifi_language(self, universe: str | None = None) -> str:
         """Generate language/dialect name."""
         languages = self._get_data(UniverseAttribute.LANGUAGES, universe)
-        return self.random_element(languages)
+        return self._random_element(languages)
 
     def scifi_quote(self, universe: str | None = None) -> str:
         """Generate famous quote."""
         quotes = self._get_data(UniverseAttribute.QUOTES, universe)
-        return self.random_element(quotes)
+        return self._random_element(quotes)
 
     def scifi_canonical_character(
         self, universe: str | None = None
@@ -195,4 +240,4 @@ class SciFiProvider(BaseProvider):
         Returns actual character with full metadata (name, rank, ship, quotes).
         """
         characters = self._get_data(UniverseAttribute.CANONICAL_CHARACTERS, universe)
-        return self.random_element(characters)
+        return self._random_element(characters)

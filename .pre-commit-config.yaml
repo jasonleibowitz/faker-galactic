@@ -1,0 +1,18 @@
+repos:
+  # Ruff - linting and formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4  # Must match pyproject.toml
+    hooks:
+      # Run the linter with auto-fix
+      - id: ruff
+        args: [--fix]
+      # Run the formatter
+      - id: ruff-format
+
+  # Mypy - type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0  # Must match pyproject.toml
+    hooks:
+      - id: mypy
+        additional_dependencies: [faker>=20.0.0, pytest>=7.0.0]
+        args: [--strict]

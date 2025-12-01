@@ -41,3 +41,10 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
+
+# Documentation/planning
+docs/
+
+# Tool caches
+.mypy_cache/
+.ruff_cache/

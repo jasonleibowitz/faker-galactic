@@ -4,7 +4,6 @@ from faker_galactic.data.domains import CanonicalCharacter
 from faker_galactic.provider import UNIVERSES
 
 
-
 class TestCanonicalCharacterDataclass:
     """Tests for CanonicalCharacter dataclass behavior."""
 

@@ -3,9 +3,8 @@
 import pytest
 
 from faker_galactic.data.constants import UniverseAttribute
-from faker_galactic.data.domains import CanonicalCharacter
+from faker_galactic.data.domains import CanonicalCharacter, RegistryConfig
 from faker_galactic.provider import UNIVERSES
-
 
 
 @pytest.mark.parametrize("universe_name", UNIVERSES.keys())
@@ -14,9 +13,9 @@ def test_universe_has_all_required_attributes(universe_name):
     universe = UNIVERSES[universe_name]
 
     for attr in UniverseAttribute:
-        assert hasattr(universe, attr.value), (
-            f"Universe '{universe_name}' missing attribute: {attr.value}"
-        )
+        assert hasattr(
+            universe, attr.value
+        ), f"Universe '{universe_name}' missing attribute: {attr.value}"
 
 
 @pytest.mark.parametrize("universe_name", UNIVERSES.keys())
@@ -60,9 +59,9 @@ def test_universe_canonical_characters_are_valid(universe_name):
     assert len(characters) > 0, "CANONICAL_CHARACTERS must not be empty"
 
     for char in characters:
-        assert isinstance(char, CanonicalCharacter), (
-            "All characters must be CanonicalCharacter instances"
-        )
+        assert isinstance(
+            char, CanonicalCharacter
+        ), "All characters must be CanonicalCharacter instances"
         assert char.first_name, "Character must have first_name"
         assert char.last_name, "Character must have last_name"
         # Other fields (rank, starship, etc.) are optional
@@ -70,7 +69,7 @@ def test_universe_canonical_characters_are_valid(universe_name):
 
 @pytest.mark.parametrize("universe_name", UNIVERSES.keys())
 def test_universe_starship_registries_have_valid_format(universe_name):
-    """Starship registries must have pattern and weight."""
+    """Starship registries must be valid RegistryConfig instances."""
     universe = UNIVERSES[universe_name]
     registries = universe.STARSHIP_REGISTRIES
 
@@ -78,12 +77,12 @@ def test_universe_starship_registries_have_valid_format(universe_name):
     assert len(registries) > 0, "STARSHIP_REGISTRIES must not be empty"
 
     for registry in registries:
-        assert isinstance(registry, dict), "Each registry must be a dict"
-        assert "pattern" in registry, "Registry must have 'pattern'"
-        assert "weight" in registry, "Registry must have 'weight'"
-        assert isinstance(registry["pattern"], str), "Pattern must be a string"
-        assert isinstance(registry["weight"], (int, float)), "Weight must be numeric"
-        assert registry["weight"] > 0, "Weight must be positive"
+        assert isinstance(
+            registry, RegistryConfig
+        ), "Each registry must be a RegistryConfig instance"
+        assert isinstance(registry.pattern, str), "Pattern must be a string"
+        assert isinstance(registry.weight, int | float), "Weight must be numeric"
+        assert registry.weight > 0, "Weight must be positive"
 
 
 def test_startrek_has_sufficient_variety():
