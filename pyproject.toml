@@ -9,7 +9,7 @@ description = "Science fiction themed Faker provider for multiple universes incl
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Jason Leibowitz", email = "jason@leibowitz.me" }]
-requires-python = ">=3.13"
+requires-python = ">=3.9"
 keywords = [
     "faker",
     "fake-data",
