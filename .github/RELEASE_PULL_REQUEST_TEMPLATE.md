@@ -14,7 +14,10 @@ Prepare the ship for deployment to the PyPI Quadrant.
 
 ## 🗺️ Navigation Coordinates
 
-View changes in the [Captain's Log](../CHANGELOG.md#{{ VERSION_ANCHOR }})
+### 📋 Changes in this release:
+{{ CHANGES }}
+
+View complete history in the [Captain's Log](../CHANGELOG.md#{{ VERSION_ANCHOR }})
 
 ## 🚀 Post-Merge Protocol
 

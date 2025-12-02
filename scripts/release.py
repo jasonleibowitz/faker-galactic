@@ -345,7 +345,7 @@ def push_branch() -> None:
         sys.exit(1)
 
 
-def create_release_pr(version: str) -> None:
+def create_release_pr(version: str, changelog_entry: str) -> None:
     """Create PR using template with version placeholders replaced."""
     # Use absolute path relative to script location
     project_root = Path(__file__).parent.parent
@@ -364,9 +364,14 @@ def create_release_pr(version: str) -> None:
         date = datetime.now().strftime("%Y-%m-%d")
         version_anchor = f"{version.replace('.', '')}---{date}"
 
+        # Extract changes from changelog entry (skip the header line)
+        changelog_lines = changelog_entry.split("\n")
+        changes = "\n".join(line for line in changelog_lines[1:] if line.strip())
+
         # Replace placeholders
         pr_body = template_content.replace("{{ VERSION }}", version)
         pr_body = pr_body.replace("{{ VERSION_ANCHOR }}", version_anchor)
+        pr_body = pr_body.replace("{{ CHANGES }}", changes)
 
         # Create temporary file for PR body
         with tempfile.NamedTemporaryFile(
@@ -460,7 +465,7 @@ if __name__ == "__main__":
 
     # Create PR
     print("\n📝 Creating release PR...")
-    create_release_pr(new_version)
+    create_release_pr(new_version, changelog_entry)
 
     print(f"\n✅ Release v{new_version} PR created!")
     print("\nNext steps:")
