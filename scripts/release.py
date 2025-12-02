@@ -280,11 +280,11 @@ def create_release_branch(version: str) -> None:
 
 
 def commit_changes(version: str) -> None:
-    """Stage pyproject.toml and CHANGELOG.md, commit with message."""
+    """Stage pyproject.toml, CHANGELOG.md, and uv.lock, commit with message."""
     try:
         # Stage files
         subprocess.run(
-            ["git", "add", "pyproject.toml", "CHANGELOG.md"],
+            ["git", "add", "pyproject.toml", "CHANGELOG.md", "uv.lock"],
             check=True,
         )
 
