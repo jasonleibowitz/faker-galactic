@@ -1,4 +1,4 @@
-.PHONY: help lint format-check format typecheck test test-cov test-verbose check
+.PHONY: help lint format-check format typecheck test test-cov test-verbose check release
 
 help:
 	@echo "Available commands:"
@@ -10,6 +10,7 @@ help:
 	@echo "  make test-cov       - Run pytest with coverage"
 	@echo "  make test-verbose   - Run pytest with verbose output"
 	@echo "  make check          - Run all checks (lint + typecheck + test)"
+	@echo "  make release        - Create release PR (interactive)"
 
 lint:
 	uv run ruff check .
@@ -34,3 +35,7 @@ test-verbose:
 
 check: lint typecheck test
 	@echo "✓ All checks passed!"
+
+release:
+	@echo "🚀 Initiating release sequence..."
+	@uv run python scripts/release.py
