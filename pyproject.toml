@@ -37,9 +37,9 @@ classifiers = [
 dependencies = ["faker>=20.0.0"]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/faker-galactic"      # UPDATE
-Repository = "https://github.com/yourusername/faker-galactic"    # UPDATE
-Issues = "https://github.com/yourusername/faker-galactic/issues" # UPDATE
+Homepage = "https://github.com/jasonleibowitz/faker-galactic"
+Repository = "https://github.com/jasonleibowitz/faker-galactic"
+Issues = "https://github.com/jasonleibowitz/faker-galactic/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/faker_galactic"]
@@ -72,20 +72,20 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = [
-    "E",     # pycodestyle errors
-    "F",     # pyflakes
-    "UP",    # pyupgrade
-    "B",     # flake8-bugbear
-    "SIM",   # flake8-simplify
-    "I",     # isort
-    "C90",   # mccabe complexity
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "I",   # isort
+    "C90", # mccabe complexity
 ]
 fixable = ["ALL"]
 unfixable = []
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]  # Allow unused imports in __init__ (re-exports)
-"tests/*" = ["F401"]      # More lenient in tests
+"__init__.py" = ["F401"] # Allow unused imports in __init__ (re-exports)
+"tests/*" = ["F401"]     # More lenient in tests
 
 [tool.ruff.lint.isort]
 known-first-party = ["faker_galactic"]
@@ -109,31 +109,28 @@ check_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"
-disallow_untyped_defs = false  # More lenient in tests
+disallow_untyped_defs = false # More lenient in tests
 
 [[tool.mypy.overrides]]
 module = "faker.*"
-ignore_missing_imports = true  # Faker has incomplete type stubs
+ignore_missing_imports = true # Faker has incomplete type stubs
 
 [[tool.mypy.overrides]]
 module = "questionary"
-ignore_missing_imports = true  # questionary has incomplete type stubs
+ignore_missing_imports = true # questionary has incomplete type stubs
 
 [[tool.mypy.overrides]]
 module = "tomlkit"
-ignore_missing_imports = true  # tomlkit has incomplete type stubs
+ignore_missing_imports = true # tomlkit has incomplete type stubs
 
 [[tool.mypy.overrides]]
 module = "release"
-ignore_missing_imports = true  # release is in scripts/ not src/
+ignore_missing_imports = true # release is in scripts/ not src/
 
 [tool.coverage.run]
 source = ["src/faker_galactic"]
 relative_files = true
-omit = [
-    "tests/*",
-    "*/__init__.py",
-]
+omit = ["tests/*", "*/__init__.py"]
 
 [tool.coverage.report]
 precision = 2
