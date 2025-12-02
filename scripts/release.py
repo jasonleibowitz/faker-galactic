@@ -345,9 +345,11 @@ def push_branch() -> None:
         sys.exit(1)
 
 
-def create_release_pr(version: str, branch: str) -> None:
+def create_release_pr(version: str) -> None:
     """Create PR using template with version placeholders replaced."""
-    template_path = Path(".github/RELEASE_PULL_REQUEST_TEMPLATE.md")
+    # Use absolute path relative to script location
+    project_root = Path(__file__).parent.parent
+    template_path = project_root / ".github" / "RELEASE_PULL_REQUEST_TEMPLATE.md"
 
     if not template_path.exists():
         print(f"❌ Template not found: {template_path}")
@@ -357,8 +359,10 @@ def create_release_pr(version: str, branch: str) -> None:
         # Read template
         template_content = template_path.read_text()
 
-        # Generate version anchor (e.g., "120" for v1.2.0)
-        version_anchor = version.replace(".", "")
+        # Generate version anchor matching GitHub's format
+        # Example: "## [1.2.0] - 2024-12-01" becomes anchor "#120---2024-12-01"
+        date = datetime.now().strftime("%Y-%m-%d")
+        version_anchor = f"{version.replace('.', '')}---{date}"
 
         # Replace placeholders
         pr_body = template_content.replace("{{ VERSION }}", version)
@@ -378,6 +382,8 @@ def create_release_pr(version: str, branch: str) -> None:
                     "gh",
                     "pr",
                     "create",
+                    "--base",
+                    "master",
                     "--title",
                     f"Release v{version}",
                     "--body-file",
@@ -452,18 +458,9 @@ if __name__ == "__main__":
     commit_changes(new_version)
     push_branch()
 
-    # Get branch name for PR creation
-    result = subprocess.run(
-        ["git", "branch", "--show-current"],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    branch_name = result.stdout.strip()
-
     # Create PR
     print("\n📝 Creating release PR...")
-    create_release_pr(new_version, branch_name)
+    create_release_pr(new_version)
 
     print(f"\n✅ Release v{new_version} PR created!")
     print("\nNext steps:")
