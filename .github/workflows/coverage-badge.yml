@@ -1,0 +1,53 @@
+name: Update Coverage Badge
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  coverage-badge:
+    name: 📊 Update Coverage Badge
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run tests with coverage
+        run: uv run pytest --cov --cov-report=json
+
+      - name: Extract coverage percentage
+        id: coverage
+        run: |
+          COVERAGE=$(python -c "import json; print(json.load(open('coverage.json'))['totals']['percent_covered_display'])")
+          echo "coverage=${COVERAGE}%" >> $GITHUB_OUTPUT
+
+          # Determine color based on coverage
+          if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+            COLOR="brightgreen"
+          elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then
+            COLOR="yellow"
+          else
+            COLOR="red"
+          fi
+          echo "color=$COLOR" >> $GITHUB_OUTPUT
+
+      - name: Update Gist badge
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: GIST_ID_PLACEHOLDER
+          filename: faker-galactic-coverage.json
+          label: coverage
+          message: ${{ steps.coverage.outputs.coverage }}
+          color: ${{ steps.coverage.outputs.color }}
