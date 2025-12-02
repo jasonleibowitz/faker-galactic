@@ -45,6 +45,9 @@ Thumbs.db
 # Documentation/planning
 docs/
 
+# Scratch/temp files
+local_scratch/
+
 # Tool caches
 .mypy_cache/
 .ruff_cache/

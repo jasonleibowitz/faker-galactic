@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 import questionary
+import tomlkit
 
 
 def get_current_version() -> str:
@@ -161,6 +162,57 @@ def preview_changelog(entry: str) -> bool:
     return confirm if confirm is not None else False
 
 
+def update_version_in_pyproject(new_version: str) -> None:
+    """Update version in pyproject.toml using tomlkit to preserve formatting."""
+    pyproject = Path("pyproject.toml")
+    content = pyproject.read_text()
+
+    # Parse with tomlkit to preserve formatting and comments
+    doc = tomlkit.parse(content)
+
+    # Access project section (tomlkit returns dict-like objects)
+    project = doc.get("project")
+    if not isinstance(project, dict):
+        print("❌ Could not find [project] section in pyproject.toml")
+        sys.exit(1)
+
+    project["version"] = new_version
+
+    # Write back with preserved formatting
+    pyproject.write_text(tomlkit.dumps(doc))
+    print(f"✓ Updated version in pyproject.toml to {new_version}")
+
+
+def update_changelog(entry: str) -> None:
+    """Prepend new entry to CHANGELOG.md."""
+    changelog = Path("CHANGELOG.md")
+
+    if not changelog.exists():
+        print("❌ CHANGELOG.md not found")
+        sys.exit(1)
+
+    content = changelog.read_text()
+
+    # Find the insertion point (after the header)
+    lines = content.split("\n")
+    insert_idx = 0
+
+    # Skip header lines until we find the first ## heading or end
+    for i, line in enumerate(lines):
+        if line.startswith("## ["):
+            insert_idx = i
+            break
+        if i > 10:  # Safety: don't search forever
+            insert_idx = len(lines)
+            break
+
+    # Insert new entry
+    new_lines = lines[:insert_idx] + [entry, ""] + lines[insert_idx:]
+    changelog.write_text("\n".join(new_lines))
+
+    print("✓ Updated CHANGELOG.md")
+
+
 if __name__ == "__main__":
     # Show warning
     if not show_warning():
@@ -192,4 +244,16 @@ if __name__ == "__main__":
         print("\n❌ Release cancelled. Edit CHANGELOG.md manually and re-run.")
         sys.exit(0)
 
-    print(f"\n✓ Ready to prepare release v{new_version}")
+    # Update files
+    print("\n📝 Updating files...")
+    update_version_in_pyproject(new_version)
+    update_changelog(changelog_entry)
+
+    print(f"\n✓ Release v{new_version} prepared!")
+    print("\nNext steps:")
+    print("  1. Review changes: git diff")
+    print(f"  2. Create branch: git checkout -b release/v{new_version}")
+    print(f"  3. Commit: git commit -am 'Prepare release v{new_version}'")
+    print(f"  4. Push: git push -u origin release/v{new_version}")
+    template_path = ".github/RELEASE_PULL_REQUEST_TEMPLATE.md"
+    print(f"  5. Create PR: gh pr create --template {template_path}")
