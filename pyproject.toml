@@ -63,6 +63,7 @@ dev = [
     "mypy==1.13.0",
     "pre-commit>=3.6.0",
     "questionary>=2.0.0",
+    "tomlkit>=0.12.0",
 ]
 
 [tool.ruff]
@@ -117,3 +118,7 @@ ignore_missing_imports = true  # Faker has incomplete type stubs
 [[tool.mypy.overrides]]
 module = "questionary"
 ignore_missing_imports = true  # questionary has incomplete type stubs
+
+[[tool.mypy.overrides]]
+module = "tomlkit"
+ignore_missing_imports = true  # tomlkit has incomplete type stubs
