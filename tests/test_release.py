@@ -15,69 +15,61 @@ import release
 class TestCalculateVersions:
     """Tests for version calculation functions."""
 
-    def test_calculate_versions_from_1_0_0(self) -> None:
-        """Test version calculation from 1.0.0."""
-        versions = release.calculate_versions("1.0.0")
-        assert versions["patch"] == "1.0.1"
-        assert versions["minor"] == "1.1.0"
-        assert versions["major"] == "2.0.0"
+    @pytest.mark.parametrize(
+        "current,expected_patch,expected_minor,expected_major",
+        [
+            ("1.0.0", "1.0.1", "1.1.0", "2.0.0"),
+            ("2.5.3", "2.5.4", "2.6.0", "3.0.0"),
+            ("10.99.99", "10.99.100", "10.100.0", "11.0.0"),
+        ],
+    )
+    def test_calculate_versions_valid(
+        self,
+        current: str,
+        expected_patch: str,
+        expected_minor: str,
+        expected_major: str,
+    ) -> None:
+        """Test version calculation with valid inputs."""
+        versions = release.calculate_versions(current)
+        assert versions["patch"] == expected_patch
+        assert versions["minor"] == expected_minor
+        assert versions["major"] == expected_major
 
-    def test_calculate_versions_from_2_5_3(self) -> None:
-        """Test version calculation from 2.5.3."""
-        versions = release.calculate_versions("2.5.3")
-        assert versions["patch"] == "2.5.4"
-        assert versions["minor"] == "2.6.0"
-        assert versions["major"] == "3.0.0"
-
-    def test_calculate_versions_from_10_99_99(self) -> None:
-        """Test version calculation with large numbers."""
-        versions = release.calculate_versions("10.99.99")
-        assert versions["patch"] == "10.99.100"
-        assert versions["minor"] == "10.100.0"
-        assert versions["major"] == "11.0.0"
-
-    def test_calculate_versions_invalid_format(self) -> None:
-        """Test version calculation with invalid format."""
+    @pytest.mark.parametrize(
+        "invalid_version",
+        [
+            "1.0",  # Missing patch
+            "1.a.0",  # Non-numeric
+            "v1.0.0",  # Has prefix
+            "1.0.0.0",  # Too many parts
+        ],
+    )
+    def test_calculate_versions_invalid(self, invalid_version: str) -> None:
+        """Test version calculation with invalid formats."""
         with pytest.raises(SystemExit):
-            release.calculate_versions("1.0")
-
-    def test_calculate_versions_non_numeric(self) -> None:
-        """Test version calculation with non-numeric parts."""
-        with pytest.raises(SystemExit):
-            release.calculate_versions("1.a.0")
+            release.calculate_versions(invalid_version)
 
 
 class TestParseCommitMessage:
     """Tests for commit message parsing."""
 
-    def test_parse_commit_with_pr_number(self) -> None:
-        """Test parsing commit message with PR number."""
-        commit = "abc1234 Add new feature (#123)"
+    @pytest.mark.parametrize(
+        "commit,expected_message,expected_pr",
+        [
+            ("abc1234 Add new feature (#123)", "Add new feature", "123"),
+            ("def5678 Fix typo in README", "Fix typo in README", None),
+            ("abc1234 Merge PRs (#100) and (#200)", "Merge PRs (#100) and", "200"),
+            ("not-a-valid-format", "not-a-valid-format", None),
+        ],
+    )
+    def test_parse_commit_message(
+        self, commit: str, expected_message: str, expected_pr: str | None
+    ) -> None:
+        """Test parsing various commit message formats."""
         message, pr_num = release.parse_commit_message(commit)
-        assert message == "Add new feature"
-        assert pr_num == "123"
-
-    def test_parse_commit_without_pr_number(self) -> None:
-        """Test parsing commit message without PR number."""
-        commit = "abc1234 Fix typo in README"
-        message, pr_num = release.parse_commit_message(commit)
-        assert message == "Fix typo in README"
-        assert pr_num is None
-
-    def test_parse_commit_with_multiple_pr_numbers(self) -> None:
-        """Test parsing commit with multiple PR numbers (takes last one)."""
-        commit = "abc1234 Merge PRs (#100) and (#200)"
-        message, pr_num = release.parse_commit_message(commit)
-        assert message == "Merge PRs (#100) and"
-        assert pr_num == "200"
-
-    def test_parse_commit_malformed(self) -> None:
-        """Test parsing malformed commit message."""
-        commit = "not-a-valid-commit-format"
-        message, pr_num = release.parse_commit_message(commit)
-        # When regex doesn't match, returns whole commit and None
-        assert message == commit
-        assert pr_num is None
+        assert message == expected_message
+        assert pr_num == expected_pr
 
 
 class TestGenerateChangelogEntry:
@@ -158,25 +150,27 @@ description = "A test project"
 class TestGetRepoInfo:
     """Tests for extracting repo info from git remote."""
 
+    @pytest.mark.parametrize(
+        "remote_url,expected_owner,expected_repo",
+        [
+            ("https://github.com/owner/repo.git\n", "owner", "repo"),
+            ("git@github.com:owner/repo.git\n", "owner", "repo"),
+            ("https://github.com/test-org/my-project.git\n", "test-org", "my-project"),
+        ],
+    )
     @patch("subprocess.run")
-    def test_get_repo_info_https_url(self, mock_run: Mock) -> None:
-        """Test extracting repo info from HTTPS URL."""
-        mock_run.return_value = Mock(
-            stdout="https://github.com/owner/repo.git\n", returncode=0
-        )
+    def test_get_repo_info_valid_urls(
+        self,
+        mock_run: Mock,
+        remote_url: str,
+        expected_owner: str,
+        expected_repo: str,
+    ) -> None:
+        """Test extracting repo info from various valid URL formats."""
+        mock_run.return_value = Mock(stdout=remote_url, returncode=0)
         owner, repo = release.get_repo_info()
-        assert owner == "owner"
-        assert repo == "repo"
-
-    @patch("subprocess.run")
-    def test_get_repo_info_ssh_url(self, mock_run: Mock) -> None:
-        """Test extracting repo info from SSH URL."""
-        mock_run.return_value = Mock(
-            stdout="git@github.com:owner/repo.git\n", returncode=0
-        )
-        owner, repo = release.get_repo_info()
-        assert owner == "owner"
-        assert repo == "repo"
+        assert owner == expected_owner
+        assert repo == expected_repo
 
     @patch("subprocess.run")
     def test_get_repo_info_invalid_url(self, mock_run: Mock) -> None:
