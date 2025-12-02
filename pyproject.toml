@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "faker-galactic"
-version = "1.0.2"
+version = "1.0.3"
 description = "Science fiction themed Faker provider for multiple universes including Star Trek, Star Wars, Battlestar Galactica, and more"
 readme = "README.md"
 license = { text = "MIT" }
