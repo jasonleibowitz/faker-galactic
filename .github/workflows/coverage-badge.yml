@@ -46,7 +46,7 @@ jobs:
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.GIST_SECRET }}
-          gistID: GIST_ID_PLACEHOLDER
+          gistID: 8f5ef0b2057559e749e4aa540c00e6f5
           filename: faker-galactic-coverage.json
           label: coverage
           message: ${{ steps.coverage.outputs.coverage }}
