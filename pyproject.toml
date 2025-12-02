@@ -122,3 +122,7 @@ ignore_missing_imports = true  # questionary has incomplete type stubs
 [[tool.mypy.overrides]]
 module = "tomlkit"
 ignore_missing_imports = true  # tomlkit has incomplete type stubs
+
+[[tool.mypy.overrides]]
+module = "release"
+ignore_missing_imports = true  # release is in scripts/ not src/
