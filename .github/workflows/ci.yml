@@ -58,6 +58,9 @@ jobs:
   test:
     name: 🛸 Shield Diagnostics (test - Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     strategy:
       matrix:
         python-version: ["3.9", "3.12", "3.13"]
@@ -71,5 +74,17 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
       - name: Install dependencies
         run: uv sync --dev
-      - name: Run tests
+      - name: Run tests with coverage (Python 3.13 only)
+        if: matrix.python-version == '3.13'
+        run: uv run pytest --cov --cov-report=term --cov-report=json
+      - name: Run tests (other Python versions)
+        if: matrix.python-version != '3.13'
         run: uv run pytest
+      - name: Coverage comment
+        if: matrix.python-version == '3.13' && github.event_name == 'pull_request'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 80
+          MINIMUM_ORANGE: 60
+          MERGE_COVERAGE_FILES: false
