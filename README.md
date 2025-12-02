@@ -1,6 +1,9 @@
-# faker-galactic
+<div align="center">
+  <img src="./logo.png" width="200"/>
 
-Custom Faker provider for generating science fiction themed data from popular sci-fi universes.
+  <h1>Faker Galactic</h1>
+  <p>Custom Faker provider for generating science fiction themed data from popular sci-fi universes</p>
+</div>
 
 ## Installation
 
