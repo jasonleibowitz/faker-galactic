@@ -238,6 +238,112 @@ def update_changelog(entry: str) -> None:
     print("✓ Updated CHANGELOG.md")
 
 
+def verify_on_master() -> None:
+    """Check current branch is master, exit if not."""
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        current_branch = result.stdout.strip()
+        if current_branch != "master":
+            print(f"❌ Must be on master branch (currently on {current_branch})")
+            sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to get current branch: {e}")
+        sys.exit(1)
+
+
+def verify_clean_working_dir() -> None:
+    """Check no uncommitted changes, exit if dirty."""
+    try:
+        result = subprocess.run(
+            ["git", "diff-index", "--quiet", "HEAD", "--"],
+            capture_output=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            print("❌ You have uncommitted changes. Commit or stash them first.")
+            sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to check working directory status: {e}")
+        sys.exit(1)
+
+
+def pull_latest() -> None:
+    """Pull latest from origin/master."""
+    try:
+        print("📥 Pulling latest from origin/master...")
+        subprocess.run(
+            ["git", "pull", "origin", "master"],
+            check=True,
+        )
+        print("✓ Pulled latest changes")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to pull from origin/master: {e}")
+        sys.exit(1)
+
+
+def create_release_branch(version: str) -> None:
+    """Create branch release/vX.X.X and check it out."""
+    branch = f"release/v{version}"
+    try:
+        subprocess.run(
+            ["git", "checkout", "-b", branch],
+            check=True,
+        )
+        print(f"✓ Created and checked out branch {branch}")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to create branch {branch}: {e}")
+        sys.exit(1)
+
+
+def commit_changes(version: str) -> None:
+    """Stage pyproject.toml and CHANGELOG.md, commit with message."""
+    try:
+        # Stage files
+        subprocess.run(
+            ["git", "add", "pyproject.toml", "CHANGELOG.md"],
+            check=True,
+        )
+
+        # Commit with message
+        commit_msg = f"Prepare release v{version}"
+        subprocess.run(
+            ["git", "commit", "-m", commit_msg],
+            check=True,
+        )
+        print(f"✓ Committed changes: {commit_msg}")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to commit changes: {e}")
+        sys.exit(1)
+
+
+def push_branch() -> None:
+    """Push current branch to origin with -u flag."""
+    try:
+        # Get current branch name
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        branch = result.stdout.strip()
+
+        # Push with upstream tracking
+        subprocess.run(
+            ["git", "push", "-u", "origin", branch],
+            check=True,
+        )
+        print(f"✓ Pushed branch {branch} to origin")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to push branch: {e}")
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     # Show warning
     if not show_warning():
@@ -274,11 +380,15 @@ if __name__ == "__main__":
     update_version_in_pyproject(new_version)
     update_changelog(changelog_entry)
 
-    print(f"\n✓ Release v{new_version} prepared!")
+    # Git operations
+    print("\n🚀 Creating release branch and committing changes...")
+    create_release_branch(new_version)
+    commit_changes(new_version)
+    push_branch()
+
+    print(f"\n✅ Release v{new_version} branch created and pushed!")
     print("\nNext steps:")
-    print("  1. Review changes: git diff")
-    print(f"  2. Create branch: git checkout -b release/v{new_version}")
-    print(f"  3. Commit: git commit -am 'Prepare release v{new_version}'")
-    print(f"  4. Push: git push -u origin release/v{new_version}")
-    template_path = ".github/RELEASE_PULL_REQUEST_TEMPLATE.md"
-    print(f"  5. Create PR: gh pr create --template {template_path}")
+    print("  1. Create PR manually using GitHub web interface or gh CLI")
+    print(f"     Example: gh pr create --title 'Release v{new_version}'")
+    print("  2. Review and merge the PR when ready")
+    print("  3. GitHub Actions will handle tagging and publishing to PyPI")
