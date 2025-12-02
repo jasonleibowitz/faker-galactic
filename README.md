@@ -3,6 +3,12 @@
 
   <h1>Faker Galactic</h1>
   <p>Custom Faker provider for generating science fiction themed data from popular sci-fi universes</p>
+
+[![package version](https://img.shields.io/pypi/v/faker-galactic)](https://test.pypi.org/project/faker-galactic/)
+[![mypy](https://img.shields.io/pypi/types/faker-galactic)]()
+[![python veresions](https://img.shields.io/pypi/pyversions/faker-galactic)]()
+![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jasonleibowitz/8f5ef0b2057559e749e4aa540c00e6f5/raw/faker-galactic-coverage.json)
+
 </div>
 
 ## Installation
