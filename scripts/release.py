@@ -11,6 +11,10 @@ from pathlib import Path
 import questionary
 import tomlkit
 
+# Import business logic from faker_galactic package
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+from faker_galactic import release_utils
+
 
 def get_current_version() -> str:
     """Read current version from pyproject.toml."""
@@ -23,23 +27,13 @@ def get_current_version() -> str:
     return match.group(1)
 
 
-def parse_version(version: str) -> tuple[int, int, int]:
-    """Parse semver string into (major, minor, patch)."""
-    match = re.match(r"^(\d+)\.(\d+)\.(\d+)$", version)
-    if not match:
-        print(f"❌ Invalid version format: {version}")
-        sys.exit(1)
-    return int(match.group(1)), int(match.group(2)), int(match.group(3))
-
-
 def calculate_versions(current: str) -> dict[str, str]:
     """Calculate patch, minor, major versions from current."""
-    major, minor, patch = parse_version(current)
-    return {
-        "patch": f"{major}.{minor}.{patch + 1}",
-        "minor": f"{major}.{minor + 1}.0",
-        "major": f"{major + 1}.0.0",
-    }
+    try:
+        return release_utils.calculate_versions(current)
+    except ValueError as e:
+        print(f"❌ {e}")
+        sys.exit(1)
 
 
 def show_warning() -> bool:
@@ -108,11 +102,7 @@ def get_commits_since(tag: str | None) -> list[str]:
 
 def parse_commit_message(commit: str) -> tuple[str, str | None]:
     """Parse commit into (message, pr_number)."""
-    # Format: "abc1234 Commit message (#123)"
-    match = re.match(r"^[a-f0-9]+\s+(.+?)(?:\s+\(#(\d+)\))?$", commit)
-    if not match:
-        return commit, None
-    return match.group(1), match.group(2)
+    return release_utils.parse_commit_message(commit)
 
 
 def get_repo_info() -> tuple[str, str]:
@@ -137,19 +127,7 @@ def get_repo_info() -> tuple[str, str]:
 def generate_changelog_entry(version: str, commits: list[str]) -> str:
     """Generate CHANGELOG entry from commits."""
     owner, repo = get_repo_info()
-    date = datetime.now().strftime("%Y-%m-%d")
-
-    lines = [f"## [{version}] - {date}\n"]
-
-    for commit in commits:
-        message, pr_num = parse_commit_message(commit)
-        if pr_num:
-            pr_link = f"[#{pr_num}](https://github.com/{owner}/{repo}/pull/{pr_num})"
-            lines.append(f"- {message} {pr_link}")
-        else:
-            lines.append(f"- {message}")
-
-    return "\n".join(lines)
+    return release_utils.format_changelog_entry(version, commits, owner, repo)
 
 
 def preview_changelog(entry: str) -> bool:
@@ -359,14 +337,9 @@ def create_release_pr(version: str, changelog_entry: str) -> None:
         # Read template
         template_content = template_path.read_text()
 
-        # Generate version anchor matching GitHub's format
-        # Example: "## [1.2.0] - 2024-12-01" becomes anchor "#120---2024-12-01"
-        date = datetime.now().strftime("%Y-%m-%d")
-        version_anchor = f"{version.replace('.', '')}---{date}"
-
-        # Extract changes from changelog entry (skip the header line)
-        changelog_lines = changelog_entry.split("\n")
-        changes = "\n".join(line for line in changelog_lines[1:] if line.strip())
+        # Generate version anchor and extract changes using utility functions
+        version_anchor = release_utils.generate_version_anchor(version)
+        changes = release_utils.extract_changes_from_entry(changelog_entry)
 
         # Replace placeholders
         pr_body = template_content.replace("{{ VERSION }}", version)

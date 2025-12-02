@@ -1,121 +1,18 @@
-"""Tests for the release script."""
+"""Tests for the release script I/O operations.
+
+Business logic tests are in test_release_utils.py.
+These tests focus on I/O wrapper functions that call git, read files, etc.
+"""
 
 # Import the release script functions
 import sys
-from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 import release
-
-
-class TestCalculateVersions:
-    """Tests for version calculation functions."""
-
-    @pytest.mark.parametrize(
-        "current,expected_patch,expected_minor,expected_major",
-        [
-            ("1.0.0", "1.0.1", "1.1.0", "2.0.0"),
-            ("2.5.3", "2.5.4", "2.6.0", "3.0.0"),
-            ("10.99.99", "10.99.100", "10.100.0", "11.0.0"),
-        ],
-    )
-    def test_calculate_versions_valid(
-        self,
-        current: str,
-        expected_patch: str,
-        expected_minor: str,
-        expected_major: str,
-    ) -> None:
-        """Test version calculation with valid inputs."""
-        versions = release.calculate_versions(current)
-        assert versions["patch"] == expected_patch
-        assert versions["minor"] == expected_minor
-        assert versions["major"] == expected_major
-
-    @pytest.mark.parametrize(
-        "invalid_version",
-        [
-            "1.0",  # Missing patch
-            "1.a.0",  # Non-numeric
-            "v1.0.0",  # Has prefix
-            "1.0.0.0",  # Too many parts
-        ],
-    )
-    def test_calculate_versions_invalid(self, invalid_version: str) -> None:
-        """Test version calculation with invalid formats."""
-        with pytest.raises(SystemExit):
-            release.calculate_versions(invalid_version)
-
-
-class TestParseCommitMessage:
-    """Tests for commit message parsing."""
-
-    @pytest.mark.parametrize(
-        "commit,expected_message,expected_pr",
-        [
-            ("abc1234 Add new feature (#123)", "Add new feature", "123"),
-            ("def5678 Fix typo in README", "Fix typo in README", None),
-            ("abc1234 Merge PRs (#100) and (#200)", "Merge PRs (#100) and", "200"),
-            ("not-a-valid-format", "not-a-valid-format", None),
-        ],
-    )
-    def test_parse_commit_message(
-        self, commit: str, expected_message: str, expected_pr: str | None
-    ) -> None:
-        """Test parsing various commit message formats."""
-        message, pr_num = release.parse_commit_message(commit)
-        assert message == expected_message
-        assert pr_num == expected_pr
-
-
-class TestGenerateChangelogEntry:
-    """Tests for changelog entry generation."""
-
-    @patch("release.datetime")
-    @patch("release.get_repo_info")
-    def test_generate_changelog_entry_with_pr_links(
-        self, mock_get_repo: Mock, mock_datetime: Mock
-    ) -> None:
-        """Test changelog generation with PR links."""
-        mock_datetime.now.return_value = datetime(2024, 12, 1)
-        mock_get_repo.return_value = ("owner", "repo")
-
-        commits = [
-            "abc1234 Add new feature (#123)",
-            "def5678 Fix bug in parser (#456)",
-            "ghi9012 Update documentation",
-        ]
-
-        result = release.generate_changelog_entry("1.2.0", commits)
-
-        assert "## [1.2.0] - 2024-12-01" in result
-        assert (
-            "- Add new feature [#123](https://github.com/owner/repo/pull/123)" in result
-        )
-        assert (
-            "- Fix bug in parser [#456](https://github.com/owner/repo/pull/456)"
-            in result
-        )
-        # Commit without PR number includes the whole commit line
-        assert "- ghi9012 Update documentation" in result
-
-    @patch("release.get_repo_info")
-    @patch("release.datetime")
-    def test_generate_changelog_entry_no_commits(
-        self, mock_datetime: Mock, mock_get_repo: Mock
-    ) -> None:
-        """Test changelog generation with no commits."""
-        mock_datetime.now.return_value = datetime(2024, 12, 1)
-        mock_get_repo.return_value = ("owner", "repo")
-
-        result = release.generate_changelog_entry("1.2.0", [])
-
-        assert "## [1.2.0] - 2024-12-01" in result
-        assert result.count("\n") == 1  # Only header line
 
 
 class TestGetCurrentVersion:
@@ -224,3 +121,22 @@ class TestGetCommitsSince:
         # Verify it doesn't include a tag in the git log command
         call_args = mock_run.call_args[0][0]
         assert ".." not in " ".join(call_args)
+
+
+class TestGenerateChangelogEntry:
+    """Integration test for generate_changelog_entry wrapper."""
+
+    @patch("release.get_repo_info")
+    def test_generate_changelog_entry_integration(self, mock_get_repo: Mock) -> None:
+        """Test that generate_changelog_entry correctly wraps utility function."""
+        mock_get_repo.return_value = ("owner", "repo")
+        commits = ["abc1234 Add feature (#123)"]
+
+        result = release.generate_changelog_entry("1.0.0", commits)
+
+        # Verify it calls get_repo_info
+        mock_get_repo.assert_called_once()
+        # Verify result contains expected content
+        assert "## [1.0.0]" in result
+        assert "Add feature" in result
+        assert "#123" in result
