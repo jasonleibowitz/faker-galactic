@@ -126,3 +126,18 @@ ignore_missing_imports = true  # tomlkit has incomplete type stubs
 [[tool.mypy.overrides]]
 module = "release"
 ignore_missing_imports = true  # release is in scripts/ not src/
+
+[tool.coverage.run]
+source = ["src/faker_galactic"]
+omit = [
+    "tests/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+
+[tool.coverage.json]
+output = "coverage.json"
