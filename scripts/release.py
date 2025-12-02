@@ -4,6 +4,7 @@
 import re
 import subprocess
 import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -344,6 +345,66 @@ def push_branch() -> None:
         sys.exit(1)
 
 
+def create_release_pr(version: str, branch: str) -> None:
+    """Create PR using template with version placeholders replaced."""
+    template_path = Path(".github/RELEASE_PULL_REQUEST_TEMPLATE.md")
+
+    if not template_path.exists():
+        print(f"❌ Template not found: {template_path}")
+        sys.exit(1)
+
+    try:
+        # Read template
+        template_content = template_path.read_text()
+
+        # Generate version anchor (e.g., "120" for v1.2.0)
+        version_anchor = version.replace(".", "")
+
+        # Replace placeholders
+        pr_body = template_content.replace("{{ VERSION }}", version)
+        pr_body = pr_body.replace("{{ VERSION_ANCHOR }}", version_anchor)
+
+        # Create temporary file for PR body
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False
+        ) as temp_file:
+            temp_file.write(pr_body)
+            temp_file_path = temp_file.name
+
+        try:
+            # Create PR using gh CLI with template file
+            result = subprocess.run(
+                [
+                    "gh",
+                    "pr",
+                    "create",
+                    "--title",
+                    f"Release v{version}",
+                    "--body-file",
+                    temp_file_path,
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            pr_url = result.stdout.strip()
+            print(f"✓ Created PR: {pr_url}")
+
+        finally:
+            # Clean up temporary file
+            Path(temp_file_path).unlink(missing_ok=True)
+
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to create PR: {e}")
+        if e.stderr:
+            print(f"Error output: {e.stderr}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Unexpected error creating PR: {e}")
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     # Pre-flight checks
     verify_on_master()
@@ -391,9 +452,21 @@ if __name__ == "__main__":
     commit_changes(new_version)
     push_branch()
 
-    print(f"\n✅ Release v{new_version} branch created and pushed!")
+    # Get branch name for PR creation
+    result = subprocess.run(
+        ["git", "branch", "--show-current"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    branch_name = result.stdout.strip()
+
+    # Create PR
+    print("\n📝 Creating release PR...")
+    create_release_pr(new_version, branch_name)
+
+    print(f"\n✅ Release v{new_version} PR created!")
     print("\nNext steps:")
-    print("  1. Create PR manually using GitHub web interface or gh CLI")
-    print(f"     Example: gh pr create --title 'Release v{new_version}'")
-    print("  2. Review and merge the PR when ready")
+    print("  1. Review the PR")
+    print("  2. Merge when ready")
     print("  3. GitHub Actions will handle tagging and publishing to PyPI")
