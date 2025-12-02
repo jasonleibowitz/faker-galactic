@@ -165,21 +165,28 @@ def preview_changelog(entry: str) -> bool:
 def update_version_in_pyproject(new_version: str) -> None:
     """Update version in pyproject.toml using tomlkit to preserve formatting."""
     pyproject = Path("pyproject.toml")
-    content = pyproject.read_text()
 
-    # Parse with tomlkit to preserve formatting and comments
-    doc = tomlkit.parse(content)
+    try:
+        content = pyproject.read_text()
+        doc = tomlkit.parse(content)
+    except Exception as e:
+        print(f"❌ Failed to read/parse pyproject.toml: {e}")
+        sys.exit(1)
 
-    # Access project section (tomlkit returns dict-like objects)
+    # Access project section (tomlkit returns Table objects, not dict)
     project = doc.get("project")
-    if not isinstance(project, dict):
+    if project is None:
         print("❌ Could not find [project] section in pyproject.toml")
         sys.exit(1)
 
     project["version"] = new_version
 
-    # Write back with preserved formatting
-    pyproject.write_text(tomlkit.dumps(doc))
+    try:
+        pyproject.write_text(tomlkit.dumps(doc))
+    except Exception as e:
+        print(f"❌ Failed to write pyproject.toml: {e}")
+        sys.exit(1)
+
     print(f"✓ Updated version in pyproject.toml to {new_version}")
 
 
@@ -191,24 +198,42 @@ def update_changelog(entry: str) -> None:
         print("❌ CHANGELOG.md not found")
         sys.exit(1)
 
-    content = changelog.read_text()
+    try:
+        content = changelog.read_text()
+    except Exception as e:
+        print(f"❌ Failed to read CHANGELOG.md: {e}")
+        sys.exit(1)
 
-    # Find the insertion point (after the header)
     lines = content.split("\n")
     insert_idx = 0
+    found_version = False
 
-    # Skip header lines until we find the first ## heading or end
+    # Find the first existing version entry
     for i, line in enumerate(lines):
         if line.startswith("## ["):
             insert_idx = i
+            found_version = True
             break
-        if i > 10:  # Safety: don't search forever
+
+    # If no existing versions, find end of header section
+    if not found_version:
+        # Skip past title and description to first blank line
+        for i, line in enumerate(lines):
+            if i > 0 and line.strip() == "" and lines[i - 1].strip() != "":
+                insert_idx = i + 1
+                break
+        else:
+            # No blank line found, append at end
             insert_idx = len(lines)
-            break
 
     # Insert new entry
     new_lines = lines[:insert_idx] + [entry, ""] + lines[insert_idx:]
-    changelog.write_text("\n".join(new_lines))
+
+    try:
+        changelog.write_text("\n".join(new_lines))
+    except Exception as e:
+        print(f"❌ Failed to write CHANGELOG.md: {e}")
+        sys.exit(1)
 
     print("✓ Updated CHANGELOG.md")
 
