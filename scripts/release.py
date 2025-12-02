@@ -345,6 +345,11 @@ def push_branch() -> None:
 
 
 if __name__ == "__main__":
+    # Pre-flight checks
+    verify_on_master()
+    verify_clean_working_dir()
+    pull_latest()
+
     # Show warning
     if not show_warning():
         print("\n❌ Release cancelled.")
