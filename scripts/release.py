@@ -217,6 +217,19 @@ def update_changelog(entry: str) -> None:
     print("✓ Updated CHANGELOG.md")
 
 
+def update_lock_file() -> None:
+    """Run uv lock to update uv.lock with new version."""
+    try:
+        subprocess.run(
+            ["uv", "lock"],
+            check=True,
+        )
+        print("✓ Updated uv.lock")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to update uv.lock: {e}")
+        sys.exit(1)
+
+
 def verify_on_master() -> None:
     """Check current branch is master, exit if not."""
     try:
@@ -429,6 +442,7 @@ if __name__ == "__main__":
     print("\n📝 Updating files...")
     update_version_in_pyproject(new_version)
     update_changelog(changelog_entry)
+    update_lock_file()
 
     # Git operations
     print("\n🚀 Creating release branch and committing changes...")
